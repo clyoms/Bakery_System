@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from employee_data import add_employee, get_employee_by_id, update_employee_name, delete_employee, initialize_employee_file, print_employee_data
 from wage_data import add_position_rate, get_position_rate, update_position_rate, delete_position_rate, initialize_wage_file
 
@@ -24,7 +24,7 @@ def print_menu():
 def main():
     while True:
         print_menu()
-        choice = input("\nEnter your choice: ")
+        choice = input("Enter your choice: ").strip().lower()
 
         try:
             if choice == '1':  # Add Employee
@@ -83,9 +83,8 @@ def main():
                 print(f"Position rate deleted successfully!")
 
             elif choice == '9':
-                 print_employee_data()
+                print_employee_data()
 
-            
             elif choice == '10':  # Exit
                 print("Exiting system.")
                 break

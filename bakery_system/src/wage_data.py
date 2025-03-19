@@ -1,14 +1,22 @@
 import json
-import os
+from pathlib import Path
 
 # Define the wage data file path
-WAGE_FILE = 'C:\\Users\\chula\\Downloads\\bakery_system\\data\\wage_rates.json'
+WAGE_FILE = Path("C:/Users/chula/Downloads/bakery_system/data/wage_rates.json")
 
 # Ensure the wage data file exists
 def initialize_wage_file():
-    if not os.path.exists(WAGE_FILE):
-        with open(WAGE_FILE, mode='w') as file:
-            json.dump({}, file)  # Start with an empty dictionary
+    default_wage_data = {
+        "Head Baker": {"base_rate": 18.50, "weekend_rate": 22.00},
+        "Baker": {"base_rate": 16.00, "weekend_rate": 19.00},
+        "Pastry Chef": {"base_rate": 16.50, "weekend_rate": 19.50},
+        "Counter Staff": {"base_rate": 14.00, "weekend_rate": 16.50},
+        "Kitchen Assistant": {"base_rate": 13.50, "weekend_rate": 16.00}
+    }
+
+    if not WAGE_FILE.exists():
+        with WAGE_FILE.open(mode='w') as file:
+            json.dump(default_wage_data, file, indent=4)
 
 # Validate that the rate is a positive number
 def validate_rate(rate):
@@ -20,7 +28,7 @@ def add_position_rate(position, base_rate, weekend_rate):
     validate_rate(base_rate)
     validate_rate(weekend_rate)
     
-    with open(WAGE_FILE, mode='r') as file:
+    with WAGE_FILE.open(mode='r') as file:
         wage_data = json.load(file)
     
     if position in wage_data:
@@ -28,12 +36,12 @@ def add_position_rate(position, base_rate, weekend_rate):
     
     wage_data[position] = {'base_rate': base_rate, 'weekend_rate': weekend_rate}
     
-    with open(WAGE_FILE, mode='w') as file:
+    with WAGE_FILE.open(mode='w') as file:
         json.dump(wage_data, file, indent=4)
 
 # Get the pay rate for a specific position
 def get_position_rate(position):
-    with open(WAGE_FILE, mode='r') as file:
+    with WAGE_FILE.open(mode='r') as file:
         wage_data = json.load(file)
     
     return wage_data.get(position, None)
@@ -43,7 +51,7 @@ def update_position_rate(position, new_base_rate, new_weekend_rate):
     validate_rate(new_base_rate)
     validate_rate(new_weekend_rate)
     
-    with open(WAGE_FILE, mode='r') as file:
+    with WAGE_FILE.open(mode='r') as file:
         wage_data = json.load(file)
     
     if position not in wage_data:
@@ -51,12 +59,12 @@ def update_position_rate(position, new_base_rate, new_weekend_rate):
     
     wage_data[position] = {'base_rate': new_base_rate, 'weekend_rate': new_weekend_rate}
     
-    with open(WAGE_FILE, mode='w') as file:
+    with WAGE_FILE.open(mode='w') as file:
         json.dump(wage_data, file, indent=4)
 
 # Delete a position from the wage data file
 def delete_position_rate(position):
-    with open(WAGE_FILE, mode='r') as file:
+    with WAGE_FILE.open(mode='r') as file:
         wage_data = json.load(file)
     
     if position not in wage_data:
@@ -64,5 +72,5 @@ def delete_position_rate(position):
     
     del wage_data[position]
     
-    with open(WAGE_FILE, mode='w') as file:
+    with WAGE_FILE.open(mode='w') as file:
         json.dump(wage_data, file, indent=4)

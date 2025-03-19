@@ -1,21 +1,21 @@
 import csv
-import os
+from pathlib import Path
 from datetime import datetime
 from tabulate import tabulate
 
-# Define the employee data file path - Using relative path
-EMPLOYEE_FILE = os.path.join('data', 'employees.csv')
+# Define the employee data file path - Using pathlib
+EMPLOYEE_FILE = Path('data/employees.csv')
 
 def initialize_employee_file():
     """Ensures employees.csv exists and contains a valid header."""
-    os.makedirs(os.path.dirname(EMPLOYEE_FILE), exist_ok=True)
-
-    file_exists = os.path.exists(EMPLOYEE_FILE)
-
-    with open(EMPLOYEE_FILE, mode='r+', newline='', encoding='utf-8-sig') as file:
+    EMPLOYEE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    
+    file_exists = EMPLOYEE_FILE.exists()
+    
+    with EMPLOYEE_FILE.open(mode='r+', newline='', encoding='utf-8-sig') as file:
         reader = csv.reader(file)
         first_line = next(reader, None)
-
+        
         # If the file is empty or missing headers, write them
         if first_line != ['id', 'first_name', 'last_name', 'position', 'start_date']:
             file.seek(0)  # Move to the start of the file
@@ -37,18 +37,18 @@ def validate_date_format(date_str):
 
 def generate_employee_id():
     """Generates the next employee ID (E001, E002, etc.)."""
-    if not os.path.exists(EMPLOYEE_FILE):
+    if not EMPLOYEE_FILE.exists():
         return "E001"
-
+    
     try:
-        with open(EMPLOYEE_FILE, mode='r', newline='', encoding='utf-8-sig') as file:
+        with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
             reader = csv.reader(file)
             next(reader)  # Skip header
             employee_ids = [row[0] for row in reader if row]
-
+        
         if not employee_ids:
             return "E001"
-
+        
         last_id = employee_ids[-1]
         last_number = int(last_id[1:])
         return f"E{last_number + 1:03d}"
@@ -62,19 +62,19 @@ def add_employee(first_name, last_name, position, start_date):
     validate_text_field("Last name", last_name)
     validate_text_field("Position", position)
     validate_date_format(start_date)
-
+    
     # Ensure the file has headers before appending data
     initialize_employee_file()
     
     employee_id = generate_employee_id()
-    with open(EMPLOYEE_FILE, mode='a', newline='', encoding='utf-8-sig') as file:
+    with EMPLOYEE_FILE.open(mode='a', newline='', encoding='utf-8-sig') as file:
         writer = csv.writer(file)
         writer.writerow([employee_id, first_name, last_name, position, start_date])
 
 def get_employee_by_id(employee_id):
     """Retrieves employee details by ID."""
     try:
-        with open(EMPLOYEE_FILE, mode='r', newline='', encoding='utf-8-sig') as file:
+        with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
             reader = csv.reader(file)
             next(reader)  # Skip header
             for row in reader:
@@ -93,7 +93,7 @@ def update_employee_name(employee_id, new_first_name, new_last_name):
     employees = []
     updated = False
     
-    with open(EMPLOYEE_FILE, mode='r', newline='', encoding='utf-8-sig') as file:
+    with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
         reader = csv.reader(file)
         header = next(reader)
         employees.append(header)
@@ -105,7 +105,7 @@ def update_employee_name(employee_id, new_first_name, new_last_name):
             employees.append(row)
     
     if updated:
-        with open(EMPLOYEE_FILE, mode='w', newline='', encoding='utf-8-sig') as file:
+        with EMPLOYEE_FILE.open(mode='w', newline='', encoding='utf-8-sig') as file:
             writer = csv.writer(file)
             writer.writerows(employees)
     else:
@@ -116,7 +116,7 @@ def delete_employee(employee_id):
     employees = []
     deleted = False
     
-    with open(EMPLOYEE_FILE, mode='r', newline='', encoding='utf-8-sig') as file:
+    with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
         reader = csv.reader(file)
         header = next(reader)
         employees.append(header)
@@ -127,17 +127,16 @@ def delete_employee(employee_id):
                 deleted = True
     
     if deleted:
-        with open(EMPLOYEE_FILE, mode='w', newline='', encoding='utf-8-sig') as file:
+        with EMPLOYEE_FILE.open(mode='w', newline='', encoding='utf-8-sig') as file:
             writer = csv.writer(file)
             writer.writerows(employees)
     else:
         raise ValueError("Employee ID not found.")
 
-
 def print_employee_data():
     """Prints the employee data in a tabulated format."""
-    with open(EMPLOYEE_FILE, mode="r", newline="", encoding="utf-8-sig") as file:
+    with EMPLOYEE_FILE.open(mode="r", newline="", encoding="utf-8-sig") as file:
         reader = csv.reader(file)
         data = list(reader)
-
+    
     print(tabulate(data, headers="firstrow", tablefmt="grid"))
