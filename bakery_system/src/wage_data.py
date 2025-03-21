@@ -9,11 +9,11 @@ class WageManager:
     def setup_wage_file(self) -> None:
         """Creates wage rates file if it doesn't exist"""
         default_wage_data = {
-            "Head Baker": {"base": 18.50, "weekend": 22.00},
-            "Baker": {"base": 16.00, "weekend": 19.00},
-            "Pastry Chef": {"base": 16.50, "weekend": 19.50},
-            "Counter Staff": {"base": 14.00, "weekend": 16.50},
-            "Kitchen Assistant": {"base": 13.50, "weekend": 16.00}
+            "Head Baker": {"base_rate": 18.50, "weekend_rate": 22.00},
+            "Baker": {"base_rate": 16.00, "weekend_rate": 19.00},
+            "Pastry Chef": {"base_rate": 16.50, "weekend_rate": 19.50},
+            "Counter Staff": {"base_rate": 14.00, "weekend_rate": 16.50},
+            "Kitchen Assistant": {"base_rate": 13.50, "weekend_rate": 16.00}
         }
 
         if not self.wage_file.exists():
@@ -35,7 +35,7 @@ class WageManager:
         if job_title in wage_data:
             raise ValueError(f"Job title '{job_title}' already exists")
         
-        wage_data[job_title] = {'base': base_rate, 'weekend': weekend_rate}
+        wage_data[job_title] = {'base_rate': base_rate, 'weekend_rate': weekend_rate}
         
         with self.wage_file.open(mode='w') as file:
             json.dump(wage_data, file, indent=4)
@@ -45,13 +45,16 @@ class WageManager:
         with self.wage_file.open(mode='r') as file:
             wage_data = json.load(file)
         
+        # Case-insensitive job title matching
+        job_title = job_title.title()  # Converts "baker" to "Baker"
+        
         if job_title not in wage_data:
             return None
         
         rates = wage_data[job_title]
         return {
-            'base': rates['base'],
-            'weekend': rates['weekend']
+            'base': rates['base_rate'],
+            'weekend': rates['weekend_rate']
         }
 
     def update_job_rate(self, job_title: str, new_base: float, new_weekend: float) -> None:
@@ -64,7 +67,7 @@ class WageManager:
         if job_title not in wage_data:
             raise ValueError(f"Job title '{job_title}' not found")
         
-        wage_data[job_title] = {'base': new_base, 'weekend': new_weekend}
+        wage_data[job_title] = {'base_rate': new_base, 'weekend_rate': new_weekend}
         
         with self.wage_file.open(mode='w') as file:
             json.dump(wage_data, file, indent=4)
@@ -86,6 +89,14 @@ class WageManager:
         try:
             with self.wage_file.open(mode='r') as file:
                 wage_data = json.load(file)
-            return True, wage_data, ""
+            
+            # Convert the data format to match what the rest of the code expects
+            converted_data = {}
+            for job, rates in wage_data.items():
+                converted_data[job] = {
+                    'base': rates['base_rate'],
+                    'weekend': rates['weekend_rate']
+                }
+            return True, converted_data, ""
         except Exception as e:
             return False, {}, f"Failed to load wage rates: {str(e)}"

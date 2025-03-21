@@ -22,8 +22,8 @@
 1. Problem: Missing Files
    Solution: I realised that I hadnt downloaded all oif the other files necessary for my code to run so it was fixed by downloading the files
 
-2. Problem: With the code for creating files if they done exist
-   Solution: [Explain how you solved it]
+2. Problem: Issues with pycache
+   Solution: Code wasnt working when ran so i tried delting pycache and trying again and it worked
    
 ### Assignment 3
 1. Problem: [Describe first challenge]

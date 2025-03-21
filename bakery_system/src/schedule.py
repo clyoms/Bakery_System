@@ -3,21 +3,15 @@ from datetime import datetime
 
 class Schedule:
 
-    def __init__(self, schedule_id: str, employee_id: str, week_start_date: str,
-                 mon_hours: float = 0, tue_hours: float = 0, wed_hours: float = 0,
-                 thu_hours: float = 0, fri_hours: float = 0, sat_hours: float = 0,
-                 sun_hours: float = 0):
-
+    def __init__(self, schedule_id: str, employee_id: str, week_start_date: str):
         self.schedule_id = schedule_id
         self.employee_id = employee_id
         self.week_start_date = week_start_date
         self.hours = {
-            'mon': mon_hours, 'tue': tue_hours,
-            'wed': wed_hours, 'thu': thu_hours,
-            'fri': fri_hours, 'sat': sat_hours,
-            'sun': sun_hours
+            'mon': 0.0, 'tue': 0.0, 'wed': 0.0, 
+            'thu': 0.0, 'fri': 0.0, 'sat': 0.0, 'sun': 0.0
         }
-        self.total_hours = self.calculate_total_hours()
+        self.total_hours = 0.0
         self.total_pay = 0.0
 
     @classmethod
@@ -70,23 +64,30 @@ class Schedule:
         return True, ""
 
     def calculate_total_hours(self) -> float:
-        return sum(self.hours.values())
+        """Calculate the total hours worked in the week."""
+        self.total_hours = sum(self.hours.values())
+        return self.total_hours
 
     def calculate_pay(self, position_rates: Dict[str, Dict[str, float]], position: str) -> Tuple[bool, float, str]:
         if position not in position_rates:
-            return False, 0.0, f"No wage rates found for position: {position}"
-        
+         return False, 0.0, f"No wage rates found for position: {position}"
+    
         rates = position_rates[position]
-        base_rate = rates['base_rate']
-        weekend_rate = rates['weekend_rate']
-        
+        base_rate = rates['base']
+        weekend_rate = rates['weekend']
+    
+    # Ensure total hours are calculated before calculating pay
+        self.calculate_total_hours()
+    
         weekday_hours = sum([self.hours[day] for day in ['mon', 'tue', 'wed', 'thu', 'fri']])
         weekend_hours = sum([self.hours[day] for day in ['sat', 'sun']])
-        
+    
         total_pay = (weekday_hours * base_rate) + (weekend_hours * weekend_rate)
         self.total_pay = round(total_pay, 2)
-        
+    
         return True, self.total_pay, ""
+
+
 
     def update_hours(self, day: str, hours: float) -> Tuple[bool, str]:
         if day not in self.hours:

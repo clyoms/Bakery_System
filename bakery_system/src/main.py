@@ -5,6 +5,7 @@ from employee import Employee
 from wage_data import WageManager
 from reports import Reports
 from data_manager import DataManager
+from schedule import Schedule
 from tabulate import tabulate
 
 
@@ -39,7 +40,9 @@ def show_menu():
     print("11. Generate Employee Schedule Report")
     print("12. Generate Wage Report (CSV)")
     print("13. Generate Wage Report (Text)")
-    print("14. Exit System")
+    print("14. Show All Job Rates")
+    print("15. Calculate Weekly Pay")
+    print("16. Exit System")
 
 def run_system():
     while True:
@@ -190,11 +193,79 @@ def run_system():
                     print(f"Error generating report: {error}")
 
             elif choice == '14':
+                success, rates, error = wage_manager.get_all_rates()
+                if success:
+                    print("\nCurrent Job Rates:")
+                    for job, rate in rates.items():
+                        print(f"\n{job}:")
+                        print(f"  Base Rate: ${rate['base']:.2f}")
+                        print(f"  Weekend Rate: ${rate['weekend']:.2f}")
+                else:
+                    print(f"Error: {error}")
+
+            elif choice == '15':
+                emp_id = input("Enter employee ID: ").strip()
+                week_start = input("Enter week start date (YYYY-MM-DD): ").strip()
+                
+                # Create a temporary schedule
+                schedule = Schedule(None, emp_id, week_start)
+                
+                # Get hours for each day
+                days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+                valid_hours = True
+                for day in days:
+                    hours = float(input(f"Enter hours for {day}: ").strip())
+                    success, message = schedule.update_hours(day, hours)
+                    if not success:
+                        print(f"Error: {message}")
+                        valid_hours = False
+                        break
+
+                if not valid_hours:
+                    continue
+                
+                # Get employee position
+                temp_employee = Employee(emp_id, "", "", "", "")
+                success, staff_list, error = temp_employee.get_all_staff()
+                if not success:
+                    print(f"Error: {error}")
+                    continue
+                
+                employee = next((s for s in staff_list if s['staff_id'] == emp_id), None)
+                if not employee:
+                    print("Employee not found")
+                    continue
+                
+                # Calculate pay
+                success, rates, error = wage_manager.get_all_rates()
+                if not success:
+                    print(f"Error: {error}")
+                    continue
+                
+                # Convert job title to proper case and calculate pay
+                position = employee['job'].title()
+                success, total_pay, error = schedule.calculate_pay(rates, position)
+                
+                if success:
+                    print(f"\nWeekly Pay Calculation:")
+                    print(f"Total Hours: {schedule.total_hours:.2f}")
+                    print(f"Total Pay: ${schedule.total_pay:.2f}")  # Use schedule.total_pay instead
+                    
+                    # Save the schedule
+                    success, message = data_manager.save_schedule(schedule)
+                    if success:
+                        print("Schedule saved successfully!")
+                    else:
+                        print(f"Error saving schedule: {message}")
+                else:
+                    print(f"Error: {error}")
+
+            elif choice == '16':
                 print("Thanks for using the system. Goodbye!")
                 break
 
             else:
-                print("Oops! Please choose a number from 1-14.")
+                print("Oops! Please choose a number from 1-16.")
 
         except ValueError as e:
             print(f"Input error: {e}")

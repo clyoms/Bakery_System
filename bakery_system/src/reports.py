@@ -34,7 +34,10 @@ class Reports:
         try:
             success, schedules, message = self.data_manager.load_schedules_by_employee_id(employee_id)
             if not success:
-                return False, [], message
+                return False, [], f"Failed to load schedules: {message}"
+
+            # Add debug print
+            print(f"Found {len(schedules)} schedules for employee {employee_id}")
 
             start = datetime.strptime(start_date, "%Y-%m-%d")
             end = datetime.strptime(end_date, "%Y-%m-%d")
@@ -44,7 +47,13 @@ class Reports:
                 if start <= datetime.strptime(sched["week_start_date"], "%Y-%m-%d") <= end
             ]
 
-            return True, filtered, "" if filtered else f"No schedules found for {employee_id} in the given range."
+            # Add debug print
+            print(f"Found {len(filtered)} schedules within date range {start_date} to {end_date}")
+
+            if not filtered:
+                return False, [], f"No schedules found for {employee_id} in the given date range."
+
+            return True, filtered, ""
         except Exception as e:
             return False, [], f"Error generating schedule report: {str(e)}"
 
