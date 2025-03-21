@@ -102,3 +102,18 @@ class DataManager:
         except Exception as e:
             return False, str(e)  # Add this line to handle exceptions
 
+    def load_schedules_by_employee_id(self, employee_id: str) -> Tuple[bool, List[Dict[str, Any]], str]:
+        """Load all schedules for a specific employee"""
+        try:
+            if not self.schedules_file.exists():
+                return True, [], "No schedules file exists yet"
+
+            schedules = []
+            with self.schedules_file.open('r', newline='', encoding='utf-8-sig') as f:
+                reader = csv.DictReader(f)
+                schedules = [sched for sched in reader if sched['employee_id'] == employee_id]
+            
+            return True, schedules, ""
+        except Exception as e:
+            return False, [], str(e)
+

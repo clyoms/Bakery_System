@@ -36,7 +36,10 @@ def show_menu():
     print("8. Remove Job Pay Rate")
     print("9. Show All Staff")
     print("10. Generate Staff List Report")
-    print("11. Exit System")
+    print("11. Generate Employee Schedule Report")
+    print("12. Generate Wage Report (CSV)")
+    print("13. Generate Wage Report (Text)")
+    print("14. Exit System")
 
 def run_system():
     while True:
@@ -140,6 +143,53 @@ def run_system():
                     print(f"Error: {error}")
 
             elif choice == '11':
+                start_date = input("Enter start date (YYYY-MM-DD): ").strip()
+                end_date = input("Enter end date (YYYY-MM-DD): ").strip()
+                emp_id = input("Enter employee ID: ").strip()
+                
+                success, schedule_report, error = reports.generate_employee_schedule(emp_id, start_date, end_date)
+                if success:
+                    success, msg = reports.save_csv_report(schedule_report, f"schedule_{emp_id}")
+                    if success:
+                        print("Schedule report saved successfully!")
+                    else:
+                        print(f"Error saving report: {msg}")
+                else:
+                    print(f"Error generating report: {error}")
+
+            elif choice == '12':
+                start_date = input("Enter start date (YYYY-MM-DD): ").strip()
+                end_date = input("Enter end date (YYYY-MM-DD): ").strip()
+                
+                success, wage_report, error = reports.generate_wage_report(start_date, end_date)
+                if success:
+                    success, msg = reports.save_csv_report(wage_report, "wage_report")
+                    if success:
+                        print("Wage report saved successfully!")
+                    else:
+                        print(f"Error saving report: {msg}")
+                else:
+                    print(f"Error generating report: {error}")
+
+            elif choice == '13':
+                start_date = input("Enter start date (YYYY-MM-DD): ").strip()
+                end_date = input("Enter end date (YYYY-MM-DD): ").strip()
+                
+                success, wage_report, error = reports.generate_wage_report(start_date, end_date)
+                if success:
+                    success, msg = reports.save_text_report(
+                        wage_report, 
+                        "wage_report", 
+                        f"Wage Report ({start_date} to {end_date})"
+                    )
+                    if success:
+                        print("Wage report saved successfully!")
+                    else:
+                        print(f"Error saving report: {msg}")
+                else:
+                    print(f"Error generating report: {error}")
+
+            elif choice == '14':
                 print("Thanks for using the system. Goodbye!")
                 break
 

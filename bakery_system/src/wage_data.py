@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 class WageManager:
     def __init__(self):
@@ -80,3 +80,12 @@ class WageManager:
         
         with self.wage_file.open(mode='w') as file:
             json.dump(wage_data, file, indent=4)
+
+    def get_all_rates(self) -> Tuple[bool, Dict[str, Dict[str, float]], str]:
+        """Get all job rates from the wage file"""
+        try:
+            with self.wage_file.open(mode='r') as file:
+                wage_data = json.load(file)
+            return True, wage_data, ""
+        except Exception as e:
+            return False, {}, f"Failed to load wage rates: {str(e)}"
