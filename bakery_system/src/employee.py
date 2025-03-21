@@ -1,5 +1,8 @@
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple, Optional
 from datetime import datetime
+from pathlib import Path
+import csv
+
 class Employee:
     """
     Class representing an employee at Murphy's Bakery.
@@ -20,6 +23,7 @@ class Employee:
         self.last_name = last_name
         self.position = position
         self.start_date = start_date
+        self.employees_file = Path("data/employees.csv")
 
     @classmethod
     def from_dict(cls, employee_data: Dict[str, str]) -> 'Employee':
@@ -94,6 +98,92 @@ class Employee:
         
         self.position = new_position
         return True, ""
+
+    def initialize_employee_file(self) -> None:
+        if not self.employees_file.exists():
+            with self.employees_file.open('w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['id', 'first_name', 'last_name', 'position', 'start_date'])
+
+    def load_employees(self) -> Tuple[bool, List[Dict[str, str]], str]:
+        try:
+            employees = []
+            with self.employees_file.open('r', newline='') as f:
+                reader = csv.DictReader(f)
+                employees = list(reader)
+            return True, employees, ""
+        except Exception as e:
+            return False, [], f"Failed to load employees: {str(e)}"
+
+    def load_employee_by_id(self, employee_id: str) -> Tuple[bool, Optional[Dict[str, str]], str]:
+        success, employees, error = self.load_employees()
+        if not success:
+            return False, None, error
+        
+        for employee in employees:
+            if employee['id'] == employee_id:
+                return True, employee, ""
+        return False, None, f"Employee with ID {employee_id} not found"
+
+    def save(self) -> Tuple[bool, str]:
+        success, employees, error = self.load_employees()
+        if not success:
+            return False, error
+
+        if any(e['id'] == self.employee_id for e in employees):
+            return False, f"Employee with ID {self.employee_id} already exists"
+
+        try:
+            with self.employees_file.open('a', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=['id', 'first_name', 'last_name', 'position', 'start_date'])
+                writer.writerow(self.to_dict())
+            return True, ""
+        except Exception as e:
+            return False, f"Failed to save employee: {str(e)}"
+
+    def update(self) -> Tuple[bool, str]:
+        success, employees, error = self.load_employees()
+        if not success:
+            return False, error
+
+        updated = False
+        for i, emp in enumerate(employees):
+            if emp['id'] == self.employee_id:
+                employees[i] = self.to_dict()
+                updated = True
+                break
+
+        if not updated:
+            return False, f"Employee with ID {self.employee_id} not found"
+
+        try:
+            with self.employees_file.open('w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.DictWriter(f, fieldnames=['id', 'first_name', 'last_name', 'position', 'start_date'])
+                writer.writeheader()
+                writer.writerows(employees)
+            return True, ""
+        except Exception as e:
+            return False, f"Failed to update employee: {str(e)}"
+
+    def delete(self) -> Tuple[bool, str]:
+        success, employees, error = self.load_employees()
+        if not success:
+            return False, error
+
+        original_length = len(employees)
+        employees = [emp for emp in employees if emp['id'] != self.employee_id]
+        
+        if len(employees) == original_length:
+            return False, f"Employee with ID {self.employee_id} not found"
+
+        try:
+            with self.employees_file.open('w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.DictWriter(f, fieldnames=['id', 'first_name', 'last_name', 'position', 'start_date'])
+                writer.writeheader()
+                writer.writerows(employees)
+            return True, ""
+        except Exception as e:
+            return False, f"Failed to delete employee: {str(e)}"
 
 
 
