@@ -3,140 +3,113 @@ from pathlib import Path
 from datetime import datetime
 from tabulate import tabulate
 
-# Use relative path
-EMPLOYEE_FILE = Path("data/employees.csv")
+STAFF_FILE = Path("data/employees.csv")
 
-def initialize_employee_file():
-    """Ensures employees.csv exists and contains a valid header."""
-    EMPLOYEE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    
-    file_exists = EMPLOYEE_FILE.exists()
-    
-    with EMPLOYEE_FILE.open(mode='r+', newline='', encoding='utf-8-sig') as file:
-        reader = csv.reader(file)
-        first_line = next(reader, None)
-        
-        # If the file is empty or missing headers, write them
-        if first_line != ['id', 'first_name', 'last_name', 'position', 'start_date']:
-            file.seek(0)  # Move to the start of the file
+def setup_staff_file():
+    """Makes the employees CSV file if it doesn't exist"""
+    if not STAFF_FILE.exists():
+        STAFF_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with STAFF_FILE.open(mode='w', newline='', encoding='utf-8-sig') as file:
             writer = csv.writer(file)
-            writer.writerow(['id', 'first_name', 'last_name', 'position', 'start_date'])
+            writer.writerow(['staff_id', 'fname', 'lname', 'job', 'start'])
 
-def validate_text_field(field_name, value, max_length=30):
-    """Validates text fields (first name, last name, position)."""
-    if not value or len(value) > max_length:
-        raise ValueError(f"{field_name} must not be empty and should not exceed {max_length} characters.")
-
-def validate_date_format(date_str):
-    """Validates date format (DD-MM-YYYY)."""
-    try:
-        datetime.strptime(date_str, '%d-%m-%Y')
-        return True
-    except ValueError:
-        raise ValueError("Invalid date format. Please use DD-MM-YYYY.")
-
-def generate_employee_id():
-    """Generates the next employee ID (E001, E002, etc.)."""
-    if not EMPLOYEE_FILE.exists():
+def make_staff_id():
+    """Generate a unique ID"""
+    if not STAFF_FILE.exists():
         return "E001"
     
     try:
-        with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
+        with STAFF_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
             reader = csv.reader(file)
-            next(reader)  # Skip header
-            employee_ids = [row[0] for row in reader if row]
+            next(reader)  # skip header
+            staff_ids = [row[0] for row in reader if row]
         
-        if not employee_ids:
+        if not staff_ids:
             return "E001"
         
-        last_id = employee_ids[-1]
-        last_number = int(last_id[1:])
-        return f"E{last_number + 1:03d}"
+        last_num = int(staff_ids[-1][1:])
+        return f"E{last_num + 1:03d}"
     except Exception as e:
-        print(f"Error generating ID: {e}")
+        print(f"Problem making ID: {e}")
         return "E001"
 
-def add_employee(first_name, last_name, position, start_date):
-    """Adds a new employee to the CSV file."""
-    validate_text_field("First name", first_name)
-    validate_text_field("Last name", last_name)
-    validate_text_field("Position", position)
-    validate_date_format(start_date)
+def add_staff(fname, lname, job, start_date):
+    """Add new staff to the system"""
+    if not fname or not lname or not job:
+        raise ValueError("All fields need to be filled in!")
     
-    # Ensure the file has headers before appending data
-    initialize_employee_file()
-    
-    employee_id = generate_employee_id()
-    with EMPLOYEE_FILE.open(mode='a', newline='', encoding='utf-8-sig') as file:
-        writer = csv.writer(file)
-        writer.writerow([employee_id, first_name, last_name, position, start_date])
-
-def get_employee_by_id(employee_id):
-    """Retrieves employee details by ID."""
     try:
-        with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
-            reader = csv.reader(file)
-            next(reader)  # Skip header
-            for row in reader:
-                if row and row[0] == employee_id:
-                    return row
-        return None
-    except Exception as e:
-        print(f"Error reading employee: {e}")
-        return None
+        datetime.strptime(start_date, '%d-%m-%Y')
+    except ValueError:
+        raise ValueError("Date should be DD-MM-YYYY format!")
 
-def update_employee_name(employee_id, new_first_name, new_last_name):
-    """Updates an employee's first and last name."""
-    validate_text_field("First name", new_first_name)
-    validate_text_field("Last name", new_last_name)
+    staff_id = make_staff_id()
     
-    employees = []
-    updated = False
+    with STAFF_FILE.open(mode='a', newline='', encoding='utf-8-sig') as file:
+        writer = csv.writer(file)
+        writer.writerow([staff_id, fname, lname, job, start_date])
+
+def find_staff(staff_id):
+    """Find a staff member by their ID"""
+    with STAFF_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
+        reader = csv.DictReader(file)
+        for person in reader:
+            if person['staff_id'] == staff_id:
+                return person
+    return None
+
+def update_staff_name(staff_id, new_fname, new_lname):
+    """Update a staff member's name"""
+    if not new_fname or not new_lname:
+        raise ValueError("Names can't be empty!")
     
-    with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
+    staff_list = []
+    found = False
+    
+    with STAFF_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
         reader = csv.reader(file)
-        header = next(reader)
-        employees.append(header)
-        for row in reader:
-            if row and row[0] == employee_id:
-                row[1] = new_first_name
-                row[2] = new_last_name
-                updated = True
-            employees.append(row)
+        headers = next(reader)
+        staff_list.append(headers)
+        for person in reader:
+            if person and person[0] == staff_id:
+                person[1] = new_fname
+                person[2] = new_lname
+                found = True
+            staff_list.append(person)
     
-    if updated:
-        with EMPLOYEE_FILE.open(mode='w', newline='', encoding='utf-8-sig') as file:
+    if found:
+        with STAFF_FILE.open(mode='w', newline='', encoding='utf-8-sig') as file:
             writer = csv.writer(file)
-            writer.writerows(employees)
+            writer.writerows(staff_list)
     else:
-        raise ValueError("Employee ID not found.")
+        raise ValueError("Couldn't find that staff member!")
 
-def delete_employee(employee_id):
-    """Deletes an employee from the CSV file."""
-    employees = []
-    deleted = False
+def remove_staff(staff_id):
+    """Remove a staff member from the system"""
+    staff_list = []
+    found = False
     
-    with EMPLOYEE_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
+    with STAFF_FILE.open(mode='r', newline='', encoding='utf-8-sig') as file:
         reader = csv.reader(file)
-        header = next(reader)
-        employees.append(header)
-        for row in reader:
-            if row and row[0] != employee_id:
-                employees.append(row)
-            elif row:
-                deleted = True
+        headers = next(reader)
+        staff_list.append(headers)
+        for person in reader:
+            if person and person[0] != staff_id:
+                staff_list.append(person)
+            elif person and person[0] == staff_id:
+                found = True
     
-    if deleted:
-        with EMPLOYEE_FILE.open(mode='w', newline='', encoding='utf-8-sig') as file:
-            writer = csv.writer(file)
-            writer.writerows(employees)
-    else:
-        raise ValueError("Employee ID not found.")
+    if not found:
+        raise ValueError("Couldn't find that staff member!")
+    
+    with STAFF_FILE.open(mode='w', newline='', encoding='utf-8-sig') as file:
+        writer = csv.writer(file)
+        writer.writerows(staff_list)
 
-def print_employee_data():
-    """Prints the employee data in a tabulated format."""
-    with EMPLOYEE_FILE.open(mode="r", newline="", encoding="utf-8-sig") as file:
+def show_staff_list():
+    """Display table of all staff members"""
+    with STAFF_FILE.open(mode="r", newline="", encoding="utf-8-sig") as file:
         reader = csv.reader(file)
-        data = list(reader)
+        all_staff = list(reader)
     
-    print(tabulate(data, headers="firstrow", tablefmt="grid"))
+    print(tabulate(all_staff, headers="firstrow", tablefmt="grid"))

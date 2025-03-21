@@ -1,98 +1,104 @@
-import csv
-import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
-from datetime import datetime
-from .schedule import Schedule
+import json
+import csv
+from typing import Tuple, List, Dict, Any
 
 class DataManager:
-    def __init__(self, data_dir: str = "data"):
-        self.data_dir = Path(data_dir)
-        self.wage_rates_file = self.data_dir / "wage_rates.json"
+    def __init__(self, data_folder: str = "data"):
+        self.data_folder = Path(data_folder)
+        self.pay_rates_file = self.data_folder / "wage_rates.json"
+        self.schedules_file = self.data_folder / "schedules.csv"
 
-    def initialize_data_directory(self) -> Tuple[bool, str]:
+    def setup_data_folder(self) -> Tuple[bool, str]:
         try:
-            self.data_dir.mkdir(exist_ok=True)
+            self.data_folder.mkdir(exist_ok=True)
             
-            if not self.wage_rates_file.exists():
-                self._create_wage_rates_file()
+            if not self.pay_rates_file.exists():
+                self._create_pay_rates()
+            
+            if not self.schedules_file.exists():
+                self._create_schedules_file()
                 
             return True, ""
         except Exception as e:
-            return False, f"Failed to initialize data directory: {str(e)}"
+            return False, f"Couldn't set up data folder: {str(e)}"
 
-    def _create_wage_rates_file(self):
-        default_rates = {
-            "Baker": {"base_rate": 16.00, "weekend_rate": 19.00},
-            "Counter Staff": {"base_rate": 14.00, "weekend_rate": 16.50}
+    def _create_pay_rates(self):
+        starter_rates = {
+            "Baker": {"base": 16.00, "weekend": 19.00},
+            "Counter Staff": {"base": 14.00, "weekend": 16.50}
         }
-        with self.wage_rates_file.open('w') as f:
-            json.dump(default_rates, f, indent=4)
+        with self.pay_rates_file.open('w') as f:
+            json.dump(starter_rates, f, indent=4)
 
-    def load_wage_rates(self) -> Tuple[bool, Dict[str, Dict[str, float]], str]:
-        try:
-            with self.wage_rates_file.open('r') as f:
-                wage_rates = json.load(f)
-            return True, wage_rates, ""
-        except Exception as e:
-            return False, {}, f"Failed to load wage rates: {str(e)}"
+    def _create_schedules_file(self):
+        headers = ['schedule_id', 'employee_id', 'week_start_date', 
+                  'mon_hours', 'tue_hours', 'wed_hours', 'thu_hours', 
+                  'fri_hours', 'sat_hours', 'sun_hours', 'total_hours', 'total_pay']
+        
+        with self.schedules_file.open('w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
 
-    def save_wage_rates(self, wage_rates: Dict[str, Dict[str, float]]) -> Tuple[bool, str]:
+    def save_schedule(self, schedule) -> Tuple[bool, str]:
         try:
-            with self.wage_rates_file.open('w') as f:
-                json.dump(wage_rates, f, indent=4)
+            if not self.schedules_file.exists():
+                self._create_schedules_file()
+
+            row = [
+                schedule.schedule_id,
+                schedule.employee_id,
+                schedule.week_start_date,
+                schedule.hours['mon'],
+                schedule.hours['tue'],
+                schedule.hours['wed'],
+                schedule.hours['thu'],
+                schedule.hours['fri'],
+                schedule.hours['sat'],
+                schedule.hours['sun'],
+                schedule.total_hours,
+                schedule.total_pay
+            ]
+
+            with self.schedules_file.open('a', newline='', encoding='utf-8-sig') as f:
+                writer = csv.writer(f)
+                writer.writerow(row)
+
             return True, ""
         except Exception as e:
-            return False, f"Failed to save wage rates: {str(e)}"
+            return False, str(e)
 
-    def get_position_rate(self, position: str) -> Tuple[bool, Optional[Dict[str, float]], str]:
-        success, wage_rates, error = self.load_wage_rates()
-        if not success:
-            return False, None, error
-        
-        if position not in wage_rates:
-            return False, None, f"Position '{position}' not found"
-        
-        return True, wage_rates[position], ""
+    def load_schedules(self) -> Tuple[bool, List[Dict[str, Any]], str]:
+        try:
+            if not self.schedules_file.exists():
+                return True, [], "No schedules file exists yet"
 
-    def update_position_rate(self, position: str, base_rate: float, weekend_rate: float) -> Tuple[bool, str]:
-        success, wage_rates, error = self.load_wage_rates()
-        if not success:
-            return False, error
-        
-        if position not in wage_rates:
-            return False, f"Position '{position}' not found"
-        
-        wage_rates[position] = {
-            "base_rate": base_rate,
-            "weekend_rate": weekend_rate
-        }
-        
-        return self.save_wage_rates(wage_rates)
+            schedules = []
+            with self.schedules_file.open('r', newline='', encoding='utf-8-sig') as f:
+                reader = csv.DictReader(f)
+                schedules = list(reader)
+            
+            return True, schedules, ""
+        except Exception as e:
+            return False, [], str(e)
 
-    def add_position_rate(self, position: str, base_rate: float, weekend_rate: float) -> Tuple[bool, str]:
-        success, wage_rates, error = self.load_wage_rates()
-        if not success:
-            return False, error
-        
-        if position in wage_rates:
-            return False, f"Position '{position}' already exists"
-        
-        wage_rates[position] = {
-            "base_rate": base_rate,
-            "weekend_rate": weekend_rate
-        }
-        
-        return self.save_wage_rates(wage_rates)
+    def delete_schedule(self, schedule_id: str) -> Tuple[bool, str]:
+        try:
+            success, schedules, error = self.load_schedules()
+            if not success:
+                return False, error
 
-    def delete_position_rate(self, position: str) -> Tuple[bool, str]:
-        success, wage_rates, error = self.load_wage_rates()
-        if not success:
-            return False, error
-        
-        if position not in wage_rates:
-            return False, f"Position '{position}' not found"
-        
-        del wage_rates[position]
-        return self.save_wage_rates(wage_rates)
+            updated_schedules = [s for s in schedules if s['schedule_id'] != schedule_id]
+            
+            if len(updated_schedules) == len(schedules):
+                return False, "Schedule not found"
+
+            with self.schedules_file.open('w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.DictWriter(f, fieldnames=schedules[0].keys())
+                writer.writeheader()
+                writer.writerows(updated_schedules)
+
+            return True, ""
+        except Exception as e:
+            return False, str(e)  # Add this line to handle exceptions
 

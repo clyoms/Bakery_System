@@ -1,107 +1,155 @@
 import os
+import csv
 from pathlib import Path
-from employee_data import add_employee, get_employee_by_id, update_employee_name, delete_employee, initialize_employee_file, print_employee_data
-from wage_data import add_position_rate, get_position_rate, update_position_rate, delete_position_rate, initialize_wage_file
+from employee import Employee
+from wage_data import WageManager
+from reports import Reports
+from data_manager import DataManager
+from tabulate import tabulate
 
-# Use relative path instead of absolute path
-DATA_DIR = Path("data")
 
-# Create data directory and all parent directories if they don't exist
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+# Keep data organized in one place
+DATA_FOLDER = Path("data")
+DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 
-# Initialize files and directories
-initialize_employee_file()
-initialize_wage_file()
+# Initialize managers
+employee_manager = Employee(None, "", "", "", "")  
+wage_manager = WageManager()
+data_manager = DataManager()
+reports = Reports(employee_manager, data_manager, wage_manager)  
 
-# CLI Menu
-def print_menu():
-    print("\nEmployee Management System")
-    print("1. Add Employee")
-    print("2. View Employee")
-    print("3. Update Employee Name")
-    print("4. Delete Employee")
-    print("5. Add Position Rate")
-    print("6. View Position Rate")
-    print("7. Update Position Rate")
-    print("8. Delete Position Rate")
-    print("9. Show Employee Data")
-    print("10. Exit")
+# Get everything ready
+employee_manager.setup_staff_file()
+wage_manager.setup_wage_file()
+reports.setup_reports_folder()
 
-# Main function to handle user input and actions
-def main():
+def show_menu():
+    print("\nBakery Staff Management")
+    print("----------------------")
+    print("1. Add New Staff Member")
+    print("2. Look Up Staff Member")
+    print("3. Update Staff Name")
+    print("4. Remove Staff Member")
+    print("5. Add New Job Pay Rate")
+    print("6. Check Job Pay Rate")
+    print("7. Update Job Pay Rate")
+    print("8. Remove Job Pay Rate")
+    print("9. Show All Staff")
+    print("10. Generate Staff List Report")
+    print("11. Exit System")
+
+def run_system():
     while True:
-        print_menu()
-        choice = input("Enter your choice: ").strip()
-
         try:
-            if choice == '1':  # Add Employee
-                first_name = input("Enter first name: ").strip()
-                last_name = input("Enter last name: ").strip()
-                position = input("Enter position: ").strip()
-                start_date = input("Enter start date (DD-MM-YYYY): ").strip()
-                add_employee(first_name, last_name, position, start_date)
-                print("Employee added successfully!")
+            show_menu()
+            choice = input("\nWhat would you like to do? ").strip()
 
-            elif choice == '2':  # View Employee
-                employee_id = input("Enter employee ID: ").strip()
-                employee = get_employee_by_id(employee_id)
-                if employee:
-                    print(f"Employee details: {employee}")
+            if choice == '1':
+                fname = input("First name: ").strip()
+                lname = input("Last name: ").strip()
+                job = input("Job title: ").strip()
+                start = input("Start date (DD-MM-YYYY): ").strip()
+                
+                # Create a new employee instance
+                new_employee = Employee(None, fname, lname, job, start)
+                new_employee.setup_staff_file()  # Ensure the file exists
+                success, message = new_employee.add_new()
+                
+                if success:
+                    print(f"Great! {message}")
                 else:
-                    print("Employee not found.")
+                    print(f"Something went wrong: {message}")
 
-            elif choice == '3':  # Update Employee Name
-                employee_id = input("Enter employee ID: ").strip()
-                new_first_name = input("Enter new first name: ").strip()
-                new_last_name = input("Enter new last name: ").strip()
-                update_employee_name(employee_id, new_first_name, new_last_name)
-                print("Employee name updated successfully!")
-
-            elif choice == '4':  # Delete Employee
-                employee_id = input("Enter employee ID: ").strip()
-                delete_employee(employee_id)
-                print("Employee deleted successfully!")
-
-            elif choice == '5':  # Add Position Rate
-                position = input("Enter position: ").strip()
-                base_rate = float(input("Enter base rate: ").strip())
-                weekend_rate = float(input("Enter weekend rate: ").strip())
-                add_position_rate(position, base_rate, weekend_rate)
-                print("Position rate added successfully!")
-
-            elif choice == '6':  # View Position Rate
-                position = input("Enter position: ").strip()
-                rate = get_position_rate(position)
-                if rate:
-                    print(f"Position rate: {rate}")
+            elif choice == '2':
+                staff_id = input("Staff ID number: ").strip()
+                temp_employee = Employee(staff_id, "", "", "", "")
+                success, staff_list, error = temp_employee.get_all_staff()
+                if success:
+                    staff = next((s for s in staff_list if s['staff_id'] == staff_id), None)
+                    if staff:
+                        print("\nStaff Details:")
+                        print(f"ID: {staff['staff_id']}")
+                        print(f"First Name: {staff['fname']}")
+                        print(f"Last Name: {staff['lname']}")
+                        print(f"Position: {staff['job']}")
+                        print(f"Start Date: {staff['start']}")
+                    else:
+                        print("Sorry, couldn't find that staff member.")
                 else:
-                    print("Position not found.")
+                    print(f"Error: {error}")
 
-            elif choice == '7':  # Update Position Rate
-                position = input("Enter position: ").strip()
-                new_base_rate = float(input("Enter new base rate: ").strip())
-                new_weekend_rate = float(input("Enter new weekend rate: ").strip())
-                update_position_rate(position, new_base_rate, new_weekend_rate)
-                print("Position rate updated successfully!")
+            elif choice == '3':
+                staff_id = input("Staff ID number: ").strip()
+                new_fname = input("New first name: ").strip()
+                new_lname = input("New last name: ").strip()
+                update_employee = Employee(staff_id, new_fname, new_lname, "", "")
+                success, error = update_employee.update()
+                if success:
+                    print("Name updated successfully!")
+                else:
+                    print(f"Error: {error}")
 
-            elif choice == '8':  # Delete Position Rate
-                position = input("Enter position: ").strip()
-                delete_position_rate(position)
-                print("Position rate deleted successfully!")
+            elif choice == '4':
+                staff_id = input("Staff ID to remove: ").strip()
+                remove_employee = Employee(staff_id, "", "", "", "")
+                success, error = remove_employee.remove()
+                if success:
+                    print("Staff member removed from system.")
+                else:
+                    print(f"Error: {error}")
+
+            elif choice == '5':
+                job = input("Job title: ").strip()
+                base = float(input("Regular hourly rate: ").strip())
+                weekend = float(input("Weekend hourly rate: ").strip())
+                wage_manager.add_job_rate(job, base, weekend)
+                print("New job pay rate added!")
+
+            elif choice == '6':
+                job = input("Job title to check: ").strip()
+                rates = wage_manager.get_job_rate(job)
+                if rates:
+                    print(f"\nPay rates for {job}:")
+                    print(f"Regular hours: ${rates['base']:.2f}")
+                    print(f"Weekend hours: ${rates['weekend']:.2f}")
+                else:
+                    print("That job title isn't in our system.")
+
+            elif choice == '7':
+                job = input("Job title: ").strip()
+                new_base = float(input("New regular rate: ").strip())
+                new_weekend = float(input("New weekend rate: ").strip())
+                wage_manager.update_job_rate(job, new_base, new_weekend)
+                print("Pay rates updated!")
+
+            elif choice == '8':
+                job = input("Job title to remove: ").strip()
+                wage_manager.remove_job_rate(job)
+                print("Job pay rates removed.")
 
             elif choice == '9':
-                print_employee_data()
+                employee_manager.show_staff_list()
 
-            elif choice == '10':  # Exit
-                print("Exiting system.")
+            elif choice == '10':
+                # Explicitly specify the sort field
+                success, staff_report, error = reports.create_staff_list(sort_by="lname")
+                if success:
+                    reports.save_csv_report(staff_report, "staff_list")
+                    print("Staff list report saved!")
+                else:
+                    print(f"Error: {error}")
+
+            elif choice == '11':
+                print("Thanks for using the system. Goodbye!")
                 break
 
             else:
-                print("Invalid choice. Please try again.")
+                print("Oops! Please choose a number from 1-14.")
+
         except ValueError as e:
-            print(f"Error: {e}")
+            print(f"Input error: {e}")
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"Something went wrong: {e}")
 
 if __name__ == "__main__":
-    main()
+    run_system()

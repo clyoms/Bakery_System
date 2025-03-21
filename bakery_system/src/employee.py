@@ -1,235 +1,151 @@
-from typing import Dict, List, Tuple, Optional
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
 import csv
+from typing import Tuple, List, Dict, Optional
+from tabulate import tabulate
 
 class Employee:
-    """
-    Class representing an employee at Murphy's Bakery.
-    Handles employee data operations and validation.
-    Attributes:
-        employee_id (str): Unique identifier for the employee
-        first_name (str): Employee's first name
-        last_name (str): Employee's last name
-        position (str): Employee's position in the bakery
-        start_date (str): Employee's start date in YYYY-MM-DD format
-    """
-    def __init__(self, employee_id: str, first_name: str, last_name: str, position: str, start_date: str):
-        """
-        Initialize an Employee object with the provided attributes.
-        """
-        self.employee_id = employee_id
-        self.first_name = first_name
-        self.last_name = last_name
-        self.position = position
+    def __init__(self, staff_id: Optional[str], fname: str, lname: str, job: str, start_date: str):
+        self.staff_id = staff_id
+        self.fname = fname
+        self.lname = lname
+        self.job = job
         self.start_date = start_date
-        self.employees_file = Path("data/employees.csv")
+        self.staff_file = Path("data/employees.csv")
 
-    @classmethod
-    def from_dict(cls, employee_data: Dict[str, str]) -> 'Employee':
-        """
-        Create an Employee object from a dictionary.
-        """
-        return cls(
-            employee_id=employee_data['id'],
-            first_name=employee_data['first_name'],
-            last_name=employee_data['last_name'],
-            position=employee_data['position'],
-            start_date=employee_data['start_date']
-        )
+    def setup_staff_file(self) -> None:
+        """Creates the employees CSV file if it doesn't exist"""
+        if not self.staff_file.exists():
+            self.staff_file.parent.mkdir(parents=True, exist_ok=True)
+            with self.staff_file.open(mode='w', newline='', encoding='utf-8-sig') as file:
+                writer = csv.writer(file)
+                writer.writerow(['staff_id', 'fname', 'lname', 'job', 'start'])
 
-    def to_dict(self) -> Dict[str, str]:
-        """
-        Convert Employee object to a dictionary.
-        """
-        return {
-            'id': self.employee_id,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'position': self.position,
-            'start_date': self.start_date
-        }
-
-    def validate(self) -> Tuple[bool, str]:
-        """
-        Validate employee data according to business rules.
-        """
-        if not all([self.employee_id, self.first_name, self.last_name, self.position, self.start_date]):
-            return False, "All fields are required"
+    def make_staff_id(self) -> str:
+        """Generate a unique staff ID"""
+        if not self.staff_file.exists():
+            return "E001"
         
         try:
-            datetime.strptime(self.start_date, '%Y-%m-%d')
-        except ValueError:
-            return False, "Invalid date format. Use YYYY-MM-DD"
+            with self.staff_file.open(mode='r', newline='', encoding='utf-8-sig') as file:
+                reader = csv.reader(file)
+                next(reader)  # skip header
+                staff_ids = [row[0] for row in reader if row]
+            
+            if not staff_ids:
+                return "E001"
+            
+            last_num = int(staff_ids[-1][1:])
+            return f"E{last_num + 1:03d}"
+        except Exception as e:
+            print(f"Problem making ID: {e}")
+            return "E001"
 
-        if not (2 <= len(self.first_name) <= 30):
-            return False, "First name must be between 2 and 30 characters"
-        
-        if not (2 <= len(self.last_name) <= 30):
-            return False, "Last name must be between 2 and 30 characters"
+    def add_new(self) -> Tuple[bool, str]:
+        """Add a new employee to the system"""
+        try:
+            if not self.fname or not self.lname or not self.job:
+                return False, "All fields must be filled in"
 
-        return True, ""
+            try:
+                datetime.strptime(self.start_date, '%d-%m-%Y')
+            except ValueError:
+                return False, "Invalid date format. Use DD-MM-YYYY"
 
-    def update_name(self, new_first_name: str, new_last_name: str) -> Tuple[bool, str]:
-        """
-        Update employee name with validation.
-        """
-        temp_employee = Employee(
-            self.employee_id,
-            new_first_name,
-            new_last_name,
-            self.position,
-            self.start_date
-        )
-        is_valid, error = temp_employee.validate()
-        if not is_valid:
-            return False, error
+            self.staff_id = self.make_staff_id()
 
-        self.first_name = new_first_name
-        self.last_name = new_last_name
-        return True, ""
-
-    def update_position(self, new_position: str) -> Tuple[bool, str]:
-        """
-        Update employee position with validation.
-        """
-        if not new_position:
-            return False, "Position cannot be empty"
-        
-        self.position = new_position
-        return True, ""
-
-    def initialize_employee_file(self) -> None:
-        if not self.employees_file.exists():
-            with self.employees_file.open('w', newline='') as f:
+            with self.staff_file.open('a', newline='', encoding='utf-8-sig') as f:
                 writer = csv.writer(f)
-                writer.writerow(['id', 'first_name', 'last_name', 'position', 'start_date'])
+                writer.writerow([
+                    self.staff_id,
+                    self.fname,
+                    self.lname,
+                    self.job,
+                    self.start_date
+                ])
+            return True, f"Employee added successfully with ID: {self.staff_id}"
+        except Exception as e:
+            return False, f"Error adding employee: {str(e)}"
 
-    def load_employees(self) -> Tuple[bool, List[Dict[str, str]], str]:
+    def get_all_staff(self) -> Tuple[bool, List[Dict[str, str]], str]:
+        """Get all staff members"""
         try:
-            employees = []
-            with self.employees_file.open('r', newline='') as f:
+            if not self.staff_file.exists():
+                return False, [], "No staff file exists"
+
+            with self.staff_file.open('r', newline='', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
-                employees = list(reader)
-            return True, employees, ""
+                staff_list = list(reader)
+            return True, staff_list, ""
         except Exception as e:
-            return False, [], f"Failed to load employees: {str(e)}"
-
-    def load_employee_by_id(self, employee_id: str) -> Tuple[bool, Optional[Dict[str, str]], str]:
-        success, employees, error = self.load_employees()
-        if not success:
-            return False, None, error
-        
-        for employee in employees:
-            if employee['id'] == employee_id:
-                return True, employee, ""
-        return False, None, f"Employee with ID {employee_id} not found"
-
-    def save(self) -> Tuple[bool, str]:
-        success, employees, error = self.load_employees()
-        if not success:
-            return False, error
-
-        if any(e['id'] == self.employee_id for e in employees):
-            return False, f"Employee with ID {self.employee_id} already exists"
-
-        try:
-            with self.employees_file.open('a', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=['id', 'first_name', 'last_name', 'position', 'start_date'])
-                writer.writerow(self.to_dict())
-            return True, ""
-        except Exception as e:
-            return False, f"Failed to save employee: {str(e)}"
+            return False, [], str(e)
 
     def update(self) -> Tuple[bool, str]:
-        success, employees, error = self.load_employees()
-        if not success:
-            return False, error
-
-        updated = False
-        for i, emp in enumerate(employees):
-            if emp['id'] == self.employee_id:
-                employees[i] = self.to_dict()
-                updated = True
-                break
-
-        if not updated:
-            return False, f"Employee with ID {self.employee_id} not found"
-
+        """Update employee name"""
         try:
-            with self.employees_file.open('w', newline='', encoding='utf-8-sig') as f:
-                writer = csv.DictWriter(f, fieldnames=['id', 'first_name', 'last_name', 'position', 'start_date'])
+            success, staff_list, error = self.get_all_staff()
+            if not success:
+                return False, error
+
+            updated = False
+            updated_staff = []
+            
+            for staff in staff_list:
+                if staff['staff_id'] == self.staff_id:
+                    staff['fname'] = self.fname
+                    staff['lname'] = self.lname
+                    updated = True
+                updated_staff.append(staff)
+
+            if not updated:
+                return False, "Staff member not found"
+
+            with self.staff_file.open('w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.DictWriter(f, fieldnames=['staff_id', 'fname', 'lname', 'job', 'start'])
                 writer.writeheader()
-                writer.writerows(employees)
+                writer.writerows(updated_staff)
+
             return True, ""
         except Exception as e:
-            return False, f"Failed to update employee: {str(e)}"
+            return False, str(e)
 
-    def delete(self) -> Tuple[bool, str]:
-        success, employees, error = self.load_employees()
+    def remove(self) -> Tuple[bool, str]:
+        """Remove employee from system"""
+        try:
+            success, staff_list, error = self.get_all_staff()
+            if not success:
+                return False, error
+
+            updated_staff = [s for s in staff_list if s['staff_id'] != self.staff_id]
+            
+            if len(updated_staff) == len(staff_list):
+                return False, "Staff member not found"
+
+            with self.staff_file.open('w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.DictWriter(f, fieldnames=['staff_id', 'fname', 'lname', 'job', 'start'])
+                writer.writeheader()
+                writer.writerows(updated_staff)
+
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
+    def show_staff_list(self) -> None:
+        """Display a formatted table of all staff members"""
+        success, staff_list, error = self.get_all_staff()
         if not success:
-            return False, error
+            print(f"Error: {error}")
+            return
 
-        original_length = len(employees)
-        employees = [emp for emp in employees if emp['id'] != self.employee_id]
+        if not staff_list:
+            print("No staff members found.")
+            return
+
+        headers = ['Staff ID', 'First Name', 'Last Name', 'Job Title', 'Start Date']
+        rows = [[person['staff_id'], person['fname'], person['lname'], 
+                person['job'], person['start']] for person in staff_list]
         
-        if len(employees) == original_length:
-            return False, f"Employee with ID {self.employee_id} not found"
-
-        try:
-            with self.employees_file.open('w', newline='', encoding='utf-8-sig') as f:
-                writer = csv.DictWriter(f, fieldnames=['id', 'first_name', 'last_name', 'position', 'start_date'])
-                writer.writeheader()
-                writer.writerows(employees)
-            return True, ""
-        except Exception as e:
-            return False, f"Failed to delete employee: {str(e)}"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        print("\nStaff List:")
+        print(tabulate(rows, headers=headers, tablefmt="grid"))
 
 

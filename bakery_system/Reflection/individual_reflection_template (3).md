@@ -19,10 +19,10 @@
    Solution: The issue was a small spelling error as i added in an extra letter into one of the variable names by mistake, it was swiftly resolved
    
 ### Assignment 2
-1. Problem: [Describe first challenge]
-   Solution: [Explain how you solved it]
+1. Problem: Missing Files
+   Solution: I realised that I hadnt downloaded all oif the other files necessary for my code to run so it was fixed by downloading the files
 
-2. Problem: [Describe second challenge]
+2. Problem: With the code for creating files if they done exist
    Solution: [Explain how you solved it]
    
 ### Assignment 3

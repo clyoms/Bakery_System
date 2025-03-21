@@ -19,11 +19,11 @@
    Solution: my code wasnt working and i was wondering why and it turned out i had forgotten to implement the rates into the json file and i had also forgotten to check if there were any rates therefore an error was occuring
    
 ### Assignment 2
-1. Problem: [Describe first challenge]
-   Solution: [Explain how you solved it]
+1. Problem: Creating an Employe Class as I hadnt done it before
+   Solution: I spent time looking over notes from class to learn how to do it, I also consulted a Youtube Video.
 
-2. Problem: [Describe second challenge]
-   Solution: [Explain how you solved it]
+2. Problem: An Issue with searching for the employee ID 
+   Solution: I had changed the variable names in the CSV file which led to issues when searching for said variables so an error would occur, I fixed it by chnaging the appropriate variable names.
    
 ### Assignment 3
 1. Problem: [Describe first challenge]
@@ -44,7 +44,9 @@ During this assignment, I learned:
 
 ### Assignment 2
 During this assignment, I learned:
-[List at least three things you learned]
+1. I learned how to create a class and how to use it to create objects
+2. I learned how to use the datetime module to validate dates
+3. I learned how to use proper error handling when working with files
 
 ### Assignment 3
 During this assignment, I learned:

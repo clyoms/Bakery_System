@@ -2,17 +2,12 @@ from typing import Dict, Tuple, Any
 from datetime import datetime
 
 class Schedule:
-    """
-    Class representing a work schedule for an employee at Murphy's Bakery.
-    Handles schedule data operations, hours calculation, and wage computation.
-    """
+
     def __init__(self, schedule_id: str, employee_id: str, week_start_date: str,
                  mon_hours: float = 0, tue_hours: float = 0, wed_hours: float = 0,
                  thu_hours: float = 0, fri_hours: float = 0, sat_hours: float = 0,
                  sun_hours: float = 0):
-        """
-        Initialize a Schedule object with the provided attributes.
-        """
+
         self.schedule_id = schedule_id
         self.employee_id = employee_id
         self.week_start_date = week_start_date
@@ -27,9 +22,7 @@ class Schedule:
 
     @classmethod
     def from_dict(cls, schedule_data: Dict[str, Any]) -> 'Schedule':
-        """
-        Create a Schedule object from a dictionary.
-        """
+
         return cls(
             schedule_id=schedule_data['schedule_id'],
             employee_id=schedule_data['employee_id'],
@@ -44,9 +37,6 @@ class Schedule:
         )
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert Schedule object to a dictionary.
-        """
         return {
             'schedule_id': self.schedule_id,
             'employee_id': self.employee_id,
@@ -63,9 +53,6 @@ class Schedule:
         }
 
     def validate(self) -> Tuple[bool, str]:
-        """
-        Validate schedule data according to business rules.
-        """
         try:
             datetime.strptime(self.week_start_date, '%Y-%m-%d')
         except ValueError:
@@ -83,15 +70,9 @@ class Schedule:
         return True, ""
 
     def calculate_total_hours(self) -> float:
-        """
-        Calculate the total hours worked in the week.
-        """
         return sum(self.hours.values())
 
     def calculate_pay(self, position_rates: Dict[str, Dict[str, float]], position: str) -> Tuple[bool, float, str]:
-        """
-        Calculate total pay for the week based on hours worked and position rates.
-        """
         if position not in position_rates:
             return False, 0.0, f"No wage rates found for position: {position}"
         
@@ -108,9 +89,6 @@ class Schedule:
         return True, self.total_pay, ""
 
     def update_hours(self, day: str, hours: float) -> Tuple[bool, str]:
-        """
-        Update hours worked for a specific day.
-        """
         if day not in self.hours:
             return False, f"Invalid day: {day}"
         

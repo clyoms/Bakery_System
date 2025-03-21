@@ -1,0 +1,22 @@
+{
+    "Head Baker": {
+        "base": 18.5,
+        "weekend": 22.0
+    },
+    "Baker": {
+        "base": 16.0,
+        "weekend": 19.0
+    },
+    "Pastry Chef": {
+        "base": 16.5,
+        "weekend": 19.5
+    },
+    "Counter Staff": {
+        "base": 14.0,
+        "weekend": 16.5
+    },
+    "Kitchen Assistant": {
+        "base": 13.5,
+        "weekend": 16.0
+    }
+}

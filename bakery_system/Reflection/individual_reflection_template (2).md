@@ -18,11 +18,11 @@
    Solution: I added a check for the existence of the employee ID before performing updates or deletions to avoid errors
    
 ### Assignment 2
-1. Problem: [Describe first challenge]
-   Solution: [Explain how you solved it]
+1. Problem: Creating the DataManager Class
+   Solution: Consulted peers, looked at their code and adapted it for my own use
 
-2. Problem: [Describe second challenge]
-   Solution: [Explain how you solved it]
+2. Problem: Working with a JSON file and appendng to it
+   Solution: Solved this issue through trial and error, i also used chatgpt to explain what i didnt understand
    
 ### Assignment 3
 1. Problem: [Describe first challenge]
@@ -43,7 +43,9 @@ The basics of managing employee data in a command-line system.
 
 ### Assignment 2
 During this assignment, I learned:
-[List at least three things you learned]
+1. How to work make classes in python
+2. different class methods like from_dict and to_dict
+3. How to manipulate different types of data 
 
 ### Assignment 3
 During this assignment, I learned:
