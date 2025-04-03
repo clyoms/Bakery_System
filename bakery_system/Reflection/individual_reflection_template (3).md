@@ -26,8 +26,8 @@
    Solution: Code wasnt working when ran so i tried delting pycache and trying again and it worked
    
 ### Assignment 3
-1. Problem: [Describe first challenge]
-   Solution: [Explain how you solved it]
+1. Problem: 
+   Solution: 
 
 2. Problem: [Describe second challenge]
    Solution: [Explain how you solved it]
@@ -44,7 +44,9 @@ During this assignment, I learned:
 
 ### Assignment 2
 During this assignment, I learned:
-[List at least three things you learned]
+- I learned how to create classes and use them
+- I learned how to convert an object to a dictionary
+- I learned how to calculate total hours worked in a week and covert it to a float
 
 ### Assignment 3
 During this assignment, I learned:

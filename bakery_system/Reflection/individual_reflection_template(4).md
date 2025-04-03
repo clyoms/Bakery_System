@@ -18,11 +18,11 @@
 2. Problem: errors with trying to manipulate the json file
    Solution: I had never worked with a json file before so i had to look over our notes from class a couple of times to understand how to do it.
 ### Assignment 2
-1. Problem: [Describe first challenge]
-   Solution: [Explain how you solved it]
+1. Problem: Calculating total pay for the week based on hours worked and position rates but i was recieving an error
+   Solution: I wasnt importing the correct modules so it was prompting an error
 
-2. Problem: [Describe second challenge]
-   Solution: [Explain how you solved it]
+2. Problem: manipulating data from the csv
+   Solution: I hadnt realised but one of my group members had changed the csv colum names leading to an error
    
 ### Assignment 3
 1. Problem: [Describe first challenge]
@@ -43,7 +43,9 @@ I learned the importance of insuring data integrity
 
 ### Assignment 2
 During this assignment, I learned:
-[List at least three things you learned]
+1. Manipulate aspects of a csv file
+2. Generate lists from csv files 
+3. Export a report to text files
 
 ### Assignment 3
 During this assignment, I learned:

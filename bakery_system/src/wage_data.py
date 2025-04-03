@@ -5,7 +5,7 @@ from typing import Dict, Optional, Tuple
 class WageManager:
     def __init__(self):
         self.wage_file = Path("data/wage_rates.json")
-    
+
     def setup_wage_file(self) -> None:
         """Creates wage rates file if it doesn't exist"""
         default_wage_data = {
@@ -28,15 +28,17 @@ class WageManager:
     def add_job_rate(self, job_title: str, base_rate: float, weekend_rate: float) -> None:
         self.validate_rate(base_rate, "base rate")
         self.validate_rate(weekend_rate, "weekend rate")
-        
+
         with self.wage_file.open(mode='r') as file:
             wage_data = json.load(file)
-        
-        if job_title in wage_data:
-            raise ValueError(f"Job title '{job_title}' already exists")
-        
+
+        # Check if job title already exists (case-insensitive)
+        for stored_title in wage_data.keys():
+            if stored_title.lower() == job_title.lower():
+                raise ValueError(f"Job title '{job_title}' already exists")
+
         wage_data[job_title] = {'base_rate': base_rate, 'weekend_rate': weekend_rate}
-        
+
         with self.wage_file.open(mode='w') as file:
             json.dump(wage_data, file, indent=4)
 
@@ -44,43 +46,54 @@ class WageManager:
         """Get the pay rates for a specific job title"""
         with self.wage_file.open(mode='r') as file:
             wage_data = json.load(file)
-        
-        # Case-insensitive job title matching
-        job_title = job_title.title()  # Converts "baker" to "Baker"
-        
-        if job_title not in wage_data:
-            return None
-        
-        rates = wage_data[job_title]
-        return {
-            'base': rates['base_rate'],
-            'weekend': rates['weekend_rate']
-        }
+
+        # Case-insensitive job title matching using lowercase
+        for stored_title, rates in wage_data.items():
+            if stored_title.lower() == job_title.lower():
+                return {
+                    'base': rates['base_rate'],
+                    'weekend': rates['weekend_rate']
+                }
+
+        # No match found
+        return None
 
     def update_job_rate(self, job_title: str, new_base: float, new_weekend: float) -> None:
         self.validate_rate(new_base, "base rate")
         self.validate_rate(new_weekend, "weekend rate")
-        
+
         with self.wage_file.open(mode='r') as file:
             wage_data = json.load(file)
-        
-        if job_title not in wage_data:
+
+        # Case-insensitive job title matching using lowercase
+        found = False
+        for stored_title in list(wage_data.keys()):
+            if stored_title.lower() == job_title.lower():
+                wage_data[stored_title] = {'base_rate': new_base, 'weekend_rate': new_weekend}
+                found = True
+                break
+
+        if not found:
             raise ValueError(f"Job title '{job_title}' not found")
-        
-        wage_data[job_title] = {'base_rate': new_base, 'weekend_rate': new_weekend}
-        
+
         with self.wage_file.open(mode='w') as file:
             json.dump(wage_data, file, indent=4)
 
     def remove_job_rate(self, job_title: str) -> None:
         with self.wage_file.open(mode='r') as file:
             wage_data = json.load(file)
-        
-        if job_title not in wage_data:
+
+        # Case-insensitive job title matching using lowercase
+        found = False
+        for stored_title in list(wage_data.keys()):
+            if stored_title.lower() == job_title.lower():
+                del wage_data[stored_title]
+                found = True
+                break
+
+        if not found:
             raise ValueError(f"Job title '{job_title}' not found")
-        
-        del wage_data[job_title]
-        
+
         with self.wage_file.open(mode='w') as file:
             json.dump(wage_data, file, indent=4)
 
@@ -89,7 +102,7 @@ class WageManager:
         try:
             with self.wage_file.open(mode='r') as file:
                 wage_data = json.load(file)
-            
+
             # Convert the data format to match what the rest of the code expects
             converted_data = {}
             for job, rates in wage_data.items():
