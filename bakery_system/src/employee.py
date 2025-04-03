@@ -11,12 +11,11 @@ class Employee:
         self.lname = lname
         self.job = job
         self.start_date = start_date
-        self.staff_file = Path("data/employees.csv")
+        self.staff_file = Path("../data/employees.csv")  # Changed to use parent directory
 
     def setup_staff_file(self) -> None:
         """Creates the employees CSV file if it doesn't exist"""
         if not self.staff_file.exists():
-            self.staff_file.parent.mkdir(parents=True, exist_ok=True)
             with self.staff_file.open(mode='w', newline='', encoding='utf-8-sig') as file:
                 writer = csv.writer(file)
                 writer.writerow(['staff_id', 'fname', 'lname', 'job', 'start'])
@@ -79,6 +78,20 @@ class Employee:
             return True, staff_list, ""
         except Exception as e:
             return False, [], str(e)
+
+    def find_staff(self) -> Optional[Dict[str, str]]:
+        """Find a staff member by their ID"""
+        try:
+            success, staff_list, error = self.get_all_staff()
+            if not success:
+                return None
+            
+            for person in staff_list:
+                if person['staff_id'] == self.staff_id:
+                    return person
+            return None
+        except Exception:
+            return None
 
     def update(self) -> Tuple[bool, str]:
         """Update employee name"""

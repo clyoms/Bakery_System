@@ -4,7 +4,7 @@ from typing import Dict, Optional, Tuple
 
 class WageManager:
     def __init__(self):
-        self.wage_file = Path("data/wage_rates.json")
+        self.wage_file = Path("../data/wage_rates.json")
 
     def setup_wage_file(self) -> None:
         """Creates wage rates file if it doesn't exist"""

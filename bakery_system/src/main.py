@@ -10,8 +10,8 @@ from tabulate import tabulate
 
 
 # Keep data organized in one place
-DATA_FOLDER = Path("data")
-DATA_FOLDER.mkdir(parents=True, exist_ok=True)
+#DATA_FOLDER = Path("data")  
+#DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 
 # Initialize managers
 employee_manager = Employee(None, "", "", "", "")  
@@ -146,8 +146,8 @@ def run_system():
                     print(f"Error: {error}")
 
             elif choice == '11':
-                start_date = input("Enter start date (YYYY-MM-DD): ").strip()
-                end_date = input("Enter end date (YYYY-MM-DD): ").strip()
+                start_date = input("Enter start date (DD-MM-YYYY): ").strip()
+                end_date = input("Enter end date (DD-MM-YYYY): ").strip()
                 emp_id = input("Enter employee ID: ").strip()
                 
                 success, schedule_report, error = reports.generate_employee_schedule(emp_id, start_date, end_date)
@@ -161,8 +161,8 @@ def run_system():
                     print(f"Error generating report: {error}")
 
             elif choice == '12':
-                start_date = input("Enter start date (YYYY-MM-DD): ").strip()
-                end_date = input("Enter end date (YYYY-MM-DD): ").strip()
+                start_date = input("Enter start date (DD-MM-YYYY): ").strip()
+                end_date = input("Enter end date (DD-MM-YYYY): ").strip()
                 
                 success, wage_report, error = reports.generate_wage_report(start_date, end_date)
                 if success:
@@ -175,8 +175,8 @@ def run_system():
                     print(f"Error generating report: {error}")
 
             elif choice == '13':
-                start_date = input("Enter start date (YYYY-MM-DD): ").strip()
-                end_date = input("Enter end date (YYYY-MM-DD): ").strip()
+                start_date = input("Enter start date (DD-MM-YYYY): ").strip()
+                end_date = input("Enter end date (DD-MM-YYYY): ").strip()
                 
                 success, wage_report, error = reports.generate_wage_report(start_date, end_date)
                 if success:
@@ -205,7 +205,7 @@ def run_system():
 
             elif choice == '15':
                 emp_id = input("Enter employee ID: ").strip()
-                week_start = input("Enter week start date (YYYY-MM-DD): ").strip()
+                week_start = input("Enter week start date (DD-MM-YYYY): ").strip()
                 
                 # Create a temporary schedule
                 schedule = Schedule(None, emp_id, week_start)

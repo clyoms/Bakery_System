@@ -12,7 +12,7 @@ class Reports:
         self.employee_manager = employee_manager
         self.data_manager = data_manager
         self.wage_manager = wage_manager
-        self.reports_folder = Path("reports")
+        self.reports_folder = Path("../reports")
 
     def setup_reports_folder(self) -> None:
         """Creates reports folder if it doesn't exist"""

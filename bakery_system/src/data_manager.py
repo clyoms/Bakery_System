@@ -4,7 +4,7 @@ import csv
 from typing import Tuple, List, Dict, Any
 
 class DataManager:
-    def __init__(self, data_folder: str = "data"):
+    def __init__(self, data_folder: str = "../data"):
         self.data_folder = Path(data_folder)
         self.pay_rates_file = self.data_folder / "wage_rates.json"
         self.schedules_file = self.data_folder / "schedules.csv"
