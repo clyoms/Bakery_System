@@ -1,108 +1,108 @@
-from typing import Dict, Tuple, Any
 from datetime import datetime
+from typing import Dict, List, Tuple, Any
 
 class Schedule:
-
-    def __init__(self, schedule_id: str, employee_id: str, week_start_date: str):
+    def __init__(self, schedule_id: str, employee_id: str, week_start_date: str, daily_hours: Dict[str, float]):
         self.schedule_id = schedule_id
         self.employee_id = employee_id
         self.week_start_date = week_start_date
-        self.hours = {
-            'mon': 0.0, 'tue': 0.0, 'wed': 0.0, 
-            'thu': 0.0, 'fri': 0.0, 'sat': 0.0, 'sun': 0.0
-        }
+        self.hours = daily_hours
         self.total_hours = 0.0
         self.total_pay = 0.0
 
     @classmethod
-    def from_dict(cls, schedule_data: Dict[str, Any]) -> 'Schedule':
+    def validate_hours(cls, daily_hours: Dict[str, float]) -> Tuple[bool, str]:
+        """Validates daily and weekly hours against legal limits"""
+        try:
+            # Check daily limits (≤12h)
+            for day, hours in daily_hours.items():
+                if hours < 0 or hours > 12:
+                    return False, f"Invalid hours for {day}: must be between 0 and 12"
 
-        return cls(
-            schedule_id=schedule_data['schedule_id'],
-            employee_id=schedule_data['employee_id'],
-            week_start_date=schedule_data['week_start_date'],
-            mon_hours=float(schedule_data['mon_hours']),
-            tue_hours=float(schedule_data['tue_hours']),
-            wed_hours=float(schedule_data['wed_hours']),
-            thu_hours=float(schedule_data['thu_hours']),
-            fri_hours=float(schedule_data['fri_hours']),
-            sat_hours=float(schedule_data['sat_hours']),
-            sun_hours=float(schedule_data['sun_hours'])
-        )
+            # Check weekly limit (≤48h)
+            total_weekly = sum(daily_hours.values())
+            if total_weekly > 48:
+                return False, "Weekly hours cannot exceed 48"
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'schedule_id': self.schedule_id,
-            'employee_id': self.employee_id,
-            'week_start_date': self.week_start_date,
-            'mon_hours': str(self.hours['mon']),
-            'tue_hours': str(self.hours['tue']),
-            'wed_hours': str(self.hours['wed']),
-            'thu_hours': str(self.hours['thu']),
-            'fri_hours': str(self.hours['fri']),
-            'sat_hours': str(self.hours['sat']),
-            'sun_hours': str(self.hours['sun']),
-            'total_hours': str(self.total_hours),
-            'total_pay': str(self.total_pay)
-        }
+            return True, ""
+        except Exception as e:
+            return False, f"Error validating hours: {str(e)}"
 
     def validate(self) -> Tuple[bool, str]:
+        """Validate all schedule data"""
+        # Check if employee ID is provided
+        if not self.employee_id:
+            return False, "Employee ID is required"
+
+        # Check if week start date is valid
         try:
-            datetime.strptime(self.week_start_date, '%Y-%m-%d')
+            datetime.strptime(self.week_start_date, '%d-%m-%Y')
         except ValueError:
-            return False, "Invalid date format. Use YYYY-MM-DD"
-        
-        for day, hours in self.hours.items():
-            if hours < 0:
-                return False, f"Hours for {day} cannot be negative"
-            if hours > 12:
-                return False, f"Hours for {day} cannot exceed 12"
-        
-        if self.total_hours > 40:
-            return False, "Total weekly hours cannot exceed 40"
-        
-        return True, ""
+            return False, "Invalid date format. Use DD-MM-YYYY"
+
+        # Validate hours
+        return self.validate_hours(self.hours)
 
     def calculate_total_hours(self) -> float:
-        """Calculate the total hours worked in the week."""
+        """Calculate total hours worked in the week"""
         self.total_hours = sum(self.hours.values())
         return self.total_hours
 
-    def calculate_pay(self, position_rates: Dict[str, Dict[str, float]], position: str) -> Tuple[bool, float, str]:
-        if position not in position_rates:
-         return False, 0.0, f"No wage rates found for position: {position}"
-    
-        rates = position_rates[position]
-        base_rate = rates['base']
-        weekend_rate = rates['weekend']
-    
-    # Ensure total hours are calculated before calculating pay
-        self.calculate_total_hours()
-    
-        weekday_hours = sum([self.hours[day] for day in ['mon', 'tue', 'wed', 'thu', 'fri']])
-        weekend_hours = sum([self.hours[day] for day in ['sat', 'sun']])
-    
-        total_pay = (weekday_hours * base_rate) + (weekend_hours * weekend_rate)
-        self.total_pay = round(total_pay, 2)
-    
-        return True, self.total_pay, ""
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert schedule to dictionary for storage"""
+        return {
+            'schedule_id': self.schedule_id,
+            'employee_id': self.employee_id,
+            'week_start': self.week_start_date,
+            'mon': self.hours.get('mon', 0),
+            'tue': self.hours.get('tue', 0),
+            'wed': self.hours.get('wed', 0),
+            'thu': self.hours.get('thu', 0),
+            'fri': self.hours.get('fri', 0),
+            'sat': self.hours.get('sat', 0),
+            'sun': self.hours.get('sun', 0),
+            'total_hours': self.total_hours,
+            'total_pay': self.total_pay
+        }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Schedule':
+        """Create Schedule object from dictionary data"""
+        daily_hours = {
+            'mon': float(data.get('mon', 0)),
+            'tue': float(data.get('tue', 0)),
+            'wed': float(data.get('wed', 0)),
+            'thu': float(data.get('thu', 0)),
+            'fri': float(data.get('fri', 0)),
+            'sat': float(data.get('sat', 0)),
+            'sun': float(data.get('sun', 0))
+        }
 
+        schedule = cls(
+            data.get('schedule_id'),
+            data.get('employee_id'),
+            data.get('week_start'),
+            daily_hours
+        )
+        schedule.total_hours = float(data.get('total_hours', 0))
+        schedule.total_pay = float(data.get('total_pay', 0))
+        return schedule
 
-    def update_hours(self, day: str, hours: float) -> Tuple[bool, str]:
-        if day not in self.hours:
-            return False, f"Invalid day: {day}"
-        
-        if not (0 <= hours <= 12):
-            return False, "Hours must be between 0 and 12"
-        
-        old_hours = self.hours[day]
-        self.hours[day] = hours
-        self.total_hours = self.calculate_total_hours()
-        
-        if self.total_hours > 40:
-            self.hours[day] = old_hours
-            self.total_hours = self.calculate_total_hours()
-            return False, "Total weekly hours cannot exceed 40"
+    @staticmethod
+    def generate_schedule_id(existing_ids: List[str]) -> str:
+        """Generate a unique schedule ID"""
+        if not existing_ids:
+            return "S001"
 
-        return True, ""
+        # Find the highest ID number
+        highest_num = 0
+        for schedule_id in existing_ids:
+            if schedule_id.startswith('S'):
+                try:
+                    id_num = int(schedule_id[1:])
+                    highest_num = max(highest_num, id_num)
+                except ValueError:
+                    # Skip IDs that don't follow the expected format
+                    continue
+
+        return f"S{highest_num + 1:03d}"

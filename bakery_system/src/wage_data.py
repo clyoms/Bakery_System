@@ -1,115 +1,58 @@
-import json
-from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 class WageManager:
     def __init__(self):
-        self.wage_file = Path("../data/wage_rates.json")
+        pass
 
-    def setup_wage_file(self) -> None:
-        """Creates wage rates file if it doesn't exist"""
-        default_wage_data = {
-            "Head Baker": {"base_rate": 18.50, "weekend_rate": 22.00},
-            "Baker": {"base_rate": 16.00, "weekend_rate": 19.00},
-            "Pastry Chef": {"base_rate": 16.50, "weekend_rate": 19.50},
-            "Counter Staff": {"base_rate": 14.00, "weekend_rate": 16.50},
-            "Kitchen Assistant": {"base_rate": 13.50, "weekend_rate": 16.00}
-        }
-
-        if not self.wage_file.exists():
-            self.wage_file.parent.mkdir(parents=True, exist_ok=True)
-            with self.wage_file.open('w') as f:
-                json.dump(default_wage_data, f, indent=4)
-
-    def validate_rate(self, rate: float, rate_type: str) -> None:
+    @staticmethod
+    def validate_rate(rate: float, rate_type: str) -> Tuple[bool, str]:
+        """Validate wage rate"""
         if rate <= 0:
-            raise ValueError(f"Invalid {rate_type}: must be greater than zero")
+            return False, f"Invalid {rate_type}: must be greater than zero"
+        return True, ""
 
-    def add_job_rate(self, job_title: str, base_rate: float, weekend_rate: float) -> None:
-        self.validate_rate(base_rate, "base rate")
-        self.validate_rate(weekend_rate, "weekend rate")
+    def validate_position(self, position: str, available_positions: Dict[str, Dict[str, float]]) -> Tuple[bool, str]:
+        """Validate if position exists in wage rates"""
+        if not position:
+            return False, "Position cannot be empty"
 
-        with self.wage_file.open(mode='r') as file:
-            wage_data = json.load(file)
+        for stored_title in available_positions.keys():
+            if stored_title.lower() == position.lower():
+                return True, ""
 
-        # Check if job title already exists (case-insensitive)
-        for stored_title in wage_data.keys():
-            if stored_title.lower() == job_title.lower():
-                raise ValueError(f"Job title '{job_title}' already exists")
+        return False, f"Position '{position}' not found"
 
-        wage_data[job_title] = {'base_rate': base_rate, 'weekend_rate': weekend_rate}
+    def get_rate(self, position: str, is_weekend: bool, rates: Dict[str, Dict[str, float]]) -> Tuple[bool, float, str]:
+        """Get wage rate for a position"""
+        for stored_title, rate_info in rates.items():
+            if stored_title.lower() == position.lower():
+                rate_key = 'weekend_rate' if is_weekend else 'base_rate'
+                return True, rate_info[rate_key], ""
+        return False, 0.0, f"Position '{position}' not found"
 
-        with self.wage_file.open(mode='w') as file:
-            json.dump(wage_data, file, indent=4)
+    def calculate_pay(self, position: str, hours: Dict[str, float], rates: Dict[str, Dict[str, float]]) -> Tuple[bool, float, str]:
+        """Calculate pay based on position and hours worked"""
+        # Validate position exists
+        valid, msg = self.validate_position(position, rates)
+        if not valid:
+            return False, 0.0, msg
 
-    def get_job_rate(self, job_title: str) -> Optional[Dict[str, float]]:
-        """Get the pay rates for a specific job title"""
-        with self.wage_file.open(mode='r') as file:
-            wage_data = json.load(file)
-
-        # Case-insensitive job title matching using lowercase
-        for stored_title, rates in wage_data.items():
-            if stored_title.lower() == job_title.lower():
-                return {
-                    'base': rates['base_rate'],
-                    'weekend': rates['weekend_rate']
-                }
-
-        # No match found
-        return None
-
-    def update_job_rate(self, job_title: str, new_base: float, new_weekend: float) -> None:
-        self.validate_rate(new_base, "base rate")
-        self.validate_rate(new_weekend, "weekend rate")
-
-        with self.wage_file.open(mode='r') as file:
-            wage_data = json.load(file)
-
-        # Case-insensitive job title matching using lowercase
-        found = False
-        for stored_title in list(wage_data.keys()):
-            if stored_title.lower() == job_title.lower():
-                wage_data[stored_title] = {'base_rate': new_base, 'weekend_rate': new_weekend}
-                found = True
+        # Get rates for this position
+        position_rates = None
+        for stored_title, rate_info in rates.items():
+            if stored_title.lower() == position.lower():
+                position_rates = rate_info
                 break
 
-        if not found:
-            raise ValueError(f"Job title '{job_title}' not found")
+        if not position_rates:
+            return False, 0.0, f"No rates found for position '{position}'"
 
-        with self.wage_file.open(mode='w') as file:
-            json.dump(wage_data, file, indent=4)
+        # Calculate pay
+        base_rate = position_rates['base_rate']
+        weekend_rate = position_rates['weekend_rate']
 
-    def remove_job_rate(self, job_title: str) -> None:
-        with self.wage_file.open(mode='r') as file:
-            wage_data = json.load(file)
+        weekday_hours = sum([hours.get(day, 0) for day in ['mon', 'tue', 'wed', 'thu', 'fri']])
+        weekend_hours = sum([hours.get(day, 0) for day in ['sat', 'sun']])
 
-        # Case-insensitive job title matching using lowercase
-        found = False
-        for stored_title in list(wage_data.keys()):
-            if stored_title.lower() == job_title.lower():
-                del wage_data[stored_title]
-                found = True
-                break
-
-        if not found:
-            raise ValueError(f"Job title '{job_title}' not found")
-
-        with self.wage_file.open(mode='w') as file:
-            json.dump(wage_data, file, indent=4)
-
-    def get_all_rates(self) -> Tuple[bool, Dict[str, Dict[str, float]], str]:
-        """Get all job rates from the wage file"""
-        try:
-            with self.wage_file.open(mode='r') as file:
-                wage_data = json.load(file)
-
-            # Convert the data format to match what the rest of the code expects
-            converted_data = {}
-            for job, rates in wage_data.items():
-                converted_data[job] = {
-                    'base': rates['base_rate'],
-                    'weekend': rates['weekend_rate']
-                }
-            return True, converted_data, ""
-        except Exception as e:
-            return False, {}, f"Failed to load wage rates: {str(e)}"
+        total_pay = (weekday_hours * base_rate) + (weekend_hours * weekend_rate)
+        return True, round(total_pay, 2), ""

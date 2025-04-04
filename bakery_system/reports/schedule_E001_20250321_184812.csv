@@ -1,2 +1,1 @@
 ﻿schedule_id,employee_id,week_start_date,mon_hours,tue_hours,wed_hours,thu_hours,fri_hours,sat_hours,sun_hours,total_hours,total_pay
-,E001,2006-01-03,8.0,6.0,4.0,0.0,2.0,4.0,4.0,28.0,472.0

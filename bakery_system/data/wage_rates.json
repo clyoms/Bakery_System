@@ -20,7 +20,7 @@
         "weekend_rate": 16.0
     },
     "OWNER": {
-        "base_rate": 50.0,
-        "weekend_rate": 100.0
+        "base_rate": 10.0,
+        "weekend_rate": 1000.0
     }
 }
